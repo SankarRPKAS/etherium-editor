@@ -12,16 +12,16 @@ const CodeEditorWithLineNumbers = () => {
         setLineCount(lines.length);
     };
 
+    const isNumber = (n) => {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
     const validatator = (arr) => {
         let errorMessages = "";
         let duplicate = "";
 
         if (!arr.length || !code.trim()) {
             return { isValid: false, messages: "No address" };
-        }
-
-        function isNumber(n) {
-            return !isNaN(parseFloat(n)) && isFinite(n);
         }
 
         arr.map((data, index) => {
@@ -31,7 +31,7 @@ const CodeEditorWithLineNumbers = () => {
             const pattern = /^(0x)?[0-9a-fA-F]{40}$/;
             let duplicateCot = false;
             const sameAdds = arr.filter((str, index2) => {
-                if (str === data) {
+                if (str === data && spltData.length > 1 && isNumber(spltData[1])) {
                     duplicate += " " + (index2 + 1);
                     if (index2 < index) {
                         duplicateCot = true;
@@ -83,6 +83,51 @@ const CodeEditorWithLineNumbers = () => {
         }
     }
 
+    const handleKeepandCombine = (type) => {
+        const arr = code.split('\n');
+        let keepfirst = [];
+
+        const checkAddress = (address,targetadd) => {
+            const spltData = address.split(/[=, ]+/);
+            const spltData2 = targetadd.split(/[=, ]+/);
+
+            return spltData[0] === spltData2[0];
+        }
+
+        for (let i = 0; i < arr.length; i++) {
+            let count = 0;
+
+            if (type !== "firstone") {
+                const spltData = arr[i].split(/[=, ]+/);
+
+                if (spltData.length > 1 && isNumber(spltData[1])) {
+                    count += parseInt(spltData[1]);
+                }
+                for (let j = i + 1; j < arr.length; j++) {
+                    if (keepfirst.find((address) => checkAddress(address, spltData[0]))) {
+                        break;
+                    }
+                    if (arr[i] === arr[j]) {
+                        const spltData = arr[j].split(/[=, ]+/);
+
+                        if (spltData.length > 1 && isNumber(spltData[1])) {
+                            count += parseInt(spltData[1]);
+                        }
+                    }
+                }
+            }
+            if (!keepfirst.find((address) => checkAddress(address, arr[i]))) {
+                const spltData = String(arr[i]).split(/[=, ]+/);
+                const lastIn = String(arr[i]).lastIndexOf(spltData[1]);
+                const slicStr = String(arr[i]).slice(0,lastIn);
+
+                keepfirst.push(count && spltData.length === 2 ? slicStr + count : arr[i]);
+            }
+        }
+
+        setCode(keepfirst.join('\n'));
+    }
+
     return (
         <div className='h-full bg-zinc-800 p-4 overflow-auto'>
             <div className='text-white text-left'>Address with amounts</div>
@@ -105,6 +150,12 @@ const CodeEditorWithLineNumbers = () => {
                     />
                 </div>
             </div>
+            {Boolean(message.length) && message.join().includes("duplicate") &&
+                <div className='flex justify-end'>
+                    <div className='flex'>
+                        <div className='text-red-600 cursor-pointer' onClick={() => { handleKeepandCombine('firstone') }}>Keep first one</div>&nbsp;<span className='text-red-600'>|</span>&nbsp;<div className='text-red-600 cursor-pointer' onClick={() => { handleKeepandCombine('') }}>combine balance</div>
+                    </div>
+                </div>}
             {Boolean(message.length) && <div class="flex p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
                 <svg class="flex-shrink-0 inline w-4 h-4 mr-3 mt-[2px]" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
