@@ -41,7 +41,7 @@ const CodeEditorWithLineNumbers = () => {
             });
 
             if (!data.trim()) {
-                return
+                return data
             }
 
             if (spltData.length !== 2) {
